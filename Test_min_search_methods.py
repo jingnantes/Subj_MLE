@@ -119,38 +119,42 @@ def L_dev(x):
     dvs = np.zeros_like(vs)
     dae = np.zeros_like(ae)
     
+    xx = np.zeros((src_num,hrc_num))
+    tmp = -1
+    for src in range(0,src_num):
+        for hrc in range(0,hrc_num):
+            tmp = tmp+1
+            xx[src,hrc] = xe[tmp]
+            
+    
     e=-1
     for src in range(0,src_num):
         for hrc in range(0,hrc_num):
-            e = e+1
             init = 0
+            e=e+1
             for s in range(0,obs_num):
-                init = init -2*(xes[s,e]-xe[e]-bs[s])/(vs[s]**2+ae[src]**2)
+                init = init -2*(data[src,hrc,s]-xx[src,hrc]-bs[s])/(vs[s]**2+ae[src]**2)
             dxe[e] = init
            
     for s in range(0,obs_num):
-        e=-1
         init = 0
         for src in range(0,src_num):
             for hrc in range(0,hrc_num):
-                e = e+1
-                init = init -2*(xes[s,e]-xe[e]-bs[s])/(vs[s]**2+ae[src]**2)
+                init = init -2*(data[src,hrc,s]-xx[src,hrc]-bs[s])/(vs[s]**2+ae[src]**2)
         dbs[s] = init  
            
     for s in range(0,obs_num):
-        e=-1
         init = 0
         for src in range(0,src_num):
             for hrc in range(0,hrc_num):
-                init = init + 2*vs[s]/(vs[s]**2+ae[src]**2) -2*vs[s]*np.power((xes[s,e]-xe[e]-bs[s])/(vs[s]**2+ae[src]**2),2)
+                init = init + 2*vs[s]/(vs[s]**2+ae[src]**2) -2*vs[s]*np.power((data[src,hrc,s]-xx[src,hrc]-bs[s])/(vs[s]**2+ae[src]**2),2)
         dvs[s] = init  
             
     for src in range(0,src_num):
         init = 0
         for hrc in range(0,hrc_num):
-            e = e+1
             for s in range(0,obs_num):                 
-                init = init + 2*ae[src]/(vs[s]**2+ae[src]**2) -2*ae[src]*np.power((xes[s,e]-xe[e]-bs[s])/(vs[s]**2+ae[src]**2),2)
+                init = init + 2*ae[src]/(vs[s]**2+ae[src]**2) -2*ae[src]*np.power((data[src,hrc,s]-xx[src,hrc]-bs[s])/(vs[s]**2+ae[src]**2),2)
         dae[src] = init 
             
     der = np.r_[dxe,dbs,dvs,dae]
@@ -191,8 +195,10 @@ bounds = Bounds(lb, ub)
 """ with constraint that vs and ae >0 """
 """ This method is significantly better than the method without constraints """
 #res = minimize(Lfunction, xinput, method='trust-constr',  jac=L_dev, hess = BFGS(), options={'verbose': 1}, bounds=bounds)
-"""jac = '2-point' shows better performance than our defined jac = L_dev"""
-res = minimize(Lfunction, xinput, method='SLSQP', jac = '2-point', options={'ftol': 1e-9, 'disp': True}, bounds=bounds)
+
+#res = minimize(Lfunction, xinput, method='SLSQP', jac = '2-point', options={'ftol': 1e-9, 'disp': True}, bounds=bounds)
+res = minimize(Lfunction, xinput, method='SLSQP', jac = L_dev, options={'ftol': 1e-9, 'disp': True}, bounds=bounds)
+
 print res
 ############# end of the optimization process##############
 
