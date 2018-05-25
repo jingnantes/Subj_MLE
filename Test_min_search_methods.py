@@ -51,11 +51,11 @@ bs = np.random.uniform(-2,2,obs_num)
 #bs = np.random.normal(0, 1, obs_num)
 
 """ observer inconsistency """
-vs = np.random.uniform(0,1,obs_num)
+vs = np.random.uniform(0.2,0.8,obs_num)
 
 
 """ content ambicuity """
-ae = np.random.uniform(0,1,src_num)
+ae = np.random.uniform(0.3,0.8,src_num)
 
 
 """ synthesized observed score """
@@ -165,20 +165,26 @@ def L_dev(x):
 """ Initialization value for xe,bs,vs, ae """
 xe0 = np.mean(xes,0) # calculate column mean
 bs0 = np.zeros(obs_num)
-vs0 = np.std(xes,1)
-ae0 = np.std(srcmos,1)
+vs0 = np.std(xes,axis=1,ddof=1)
+ae0 = np.std(srcmos,axis=1,ddof=1)
 
 xinput = np.r_[xe0,bs0,vs0,ae0]
 
 """ set lower and upper bounds for each parameter """
+tempstd = np.std(srcmos,axis=1,ddof=1)
+srcusestd = np.max(tempstd)
+
+tempstd = np.std(xes,axis=1,ddof=1)
+obsusestd = np.max(tempstd)
+
 xelb = np.zeros(pvs_num)
 xeub = 6*np.ones(pvs_num)
 bslb = -2*np.ones(obs_num)
 bsub = 2*np.ones(obs_num)
 vslb = 0.001*np.ones(obs_num)
-vsub = 1*np.ones(obs_num)
+vsub = obsusestd*np.ones(obs_num)
 aelb = 0.001*np.ones(src_num)
-aeub = 1*np.ones(src_num)
+aeub = srcusestd*np.ones(src_num)
 
 lb = np.r_[xelb,bslb,vslb,aelb]
 ub = np.r_[xeub,bsub,vsub,aeub]
